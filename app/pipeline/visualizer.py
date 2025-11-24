@@ -7,7 +7,6 @@ RESULT_DIR = "results/inference"
 os.makedirs(RESULT_DIR, exist_ok=True)
 
 def save_original_image(image_path):
-    """Save original image without any modifications for non_gambling results"""
     filename = f"{uuid4()}.jpg"
     save_path = os.path.join(RESULT_DIR, filename)
     

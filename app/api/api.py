@@ -3,12 +3,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from tempfile import NamedTemporaryFile
+from contextlib import asynccontextmanager
 from uuid import uuid4
 from datetime import datetime
+from PIL import Image
+import numpy as np
 import shutil
 import os
 import json
 import logging
+import time
 
 from app.pipeline.pipeline import GamblingPipeline
 
@@ -20,11 +24,55 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Initialize pipeline 
+pipeline = GamblingPipeline()
+
+
+def warmup_pipeline(pipeline_instance: GamblingPipeline):
+    logger.info("[WARMUP] Starting model warmup...")
+    warmup_start = time.time()
+    
+    try:
+        t_start = time.time()
+        dummy_image = Image.new("RGB", (224, 224), color=(128, 128, 128))
+        _ = pipeline_instance.classifier.predict_prob(dummy_image)
+        logger.info(f"[WARMUP] ViT Classifier ready ({(time.time() - t_start) * 1000:.0f}ms)")
+        
+        t_start = time.time()
+        dummy_image_det = Image.new("RGB", (640, 640), color=(128, 128, 128))
+        _ = pipeline_instance.detector.detect(dummy_image_det)
+        logger.info(f"[WARMUP] RT-DETR Detector ready ({(time.time() - t_start) * 1000:.0f}ms)")
+        
+        t_start = time.time()
+        dummy_array = np.zeros((100, 300, 3), dtype=np.uint8)
+        dummy_array.fill(200)
+        _ = pipeline_instance.ocr.reader.readtext(dummy_array, detail=0)
+        logger.info(f"[WARMUP] EasyOCR ready ({(time.time() - t_start) * 1000:.0f}ms)")
+        
+        total_warmup_time = (time.time() - warmup_start) * 1000
+        logger.info(f"[WARMUP] All models warmed up ({total_warmup_time:.0f}ms)")
+        
+    except Exception as e:
+        logger.error(f"[WARMUP] Warmup failed: {str(e)}")
+        raise
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Starting Gambling Detection API...")
+    warmup_pipeline(pipeline)
+    logger.info("Server is ready to accept requests")
+    
+    yield
+    
+    logger.info("Shutting down server...")
+
 
 app = FastAPI(
     title="Gambling Detection API",
     description="Classification → Object Detection → OCR",
-    version="2.0.0"
+    version="2.0.0",
+    lifespan=lifespan
 )
 
 app.add_middleware(
@@ -40,7 +88,6 @@ os.makedirs("results/data", exist_ok=True)
 
 app.mount("/results", StaticFiles(directory="results"), name="results")
 
-pipeline = GamblingPipeline()
 
 @app.get("/health")
 async def health_check():

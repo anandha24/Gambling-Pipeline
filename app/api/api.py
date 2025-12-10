@@ -8,8 +8,17 @@ from datetime import datetime
 import shutil
 import os
 import json
+import logging
 
 from app.pipeline.pipeline import GamblingPipeline
+
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+logger = logging.getLogger(__name__)
 
 
 app = FastAPI(
@@ -33,6 +42,14 @@ app.mount("/results", StaticFiles(directory="results"), name="results")
 
 pipeline = GamblingPipeline()
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint untuk monitoring API status"""
+    return JSONResponse({
+        "status": "ok",
+        "timestamp": datetime.now().isoformat()
+    })
+
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
     try:
@@ -41,6 +58,17 @@ async def predict(file: UploadFile = File(...)):
             temp_path = temp.name
 
         result = pipeline.process(temp_path)
+
+        # Logging performance
+        perf = result.get("performance", {})
+        logger.info(
+            f"[PREDICT] Status: {result['status']} | "
+            f"Total: {perf.get('total_ms', 0)}ms | "
+            f"Classifier: {perf.get('classifier_ms', 0)}ms | "
+            f"OCR: {perf.get('ocr_ms', 0)}ms | "
+            f"Detector: {perf.get('detector_ms', 0)}ms | "
+            f"Viz: {perf.get('visualization_ms', 0)}ms"
+        )
 
         result_id = str(uuid4())
         result["id"] = result_id
@@ -53,6 +81,7 @@ async def predict(file: UploadFile = File(...)):
         return JSONResponse({"success": True, "result": result})
 
     except Exception as e:
+        logger.error(f"[PREDICT] Error: {str(e)}")
         return JSONResponse({"success": False, "error": str(e)}, status_code=500)
 
 @app.get("/results")

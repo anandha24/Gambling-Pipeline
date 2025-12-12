@@ -11,7 +11,7 @@ def save_original_image(image_path):
     save_path = os.path.join(RESULT_DIR, filename)
     
     image = Image.open(image_path).convert("RGB")
-    image.save(save_path, "WebP", quality=85, method=6)
+    image.save(save_path, "WebP", quality=50, method=6)
     
     return f"/results/inference/{filename}"
 

@@ -1,8 +1,7 @@
 import numpy as np
 import easyocr
-import cv2
 import re
-from PIL import Image
+from PIL import Image, ImageEnhance
 from rapidfuzz.distance import Levenshtein
 from app.config.settings import (
     GAMBLING_KEYWORDS,
@@ -17,22 +16,24 @@ class GamblingOCR:
         self.reader = easyocr.Reader(['id', 'en'], gpu=True)
         print("EasyOCR Ready")
 
-    def preprocess_for_ocr(self, image_path):
-        """Preprocessing: resize 2x + CLAHE"""
-        img = cv2.imread(image_path)
-        if img is None:
-            raise FileNotFoundError(f"Image not found: {image_path}")
+    def preprocess_for_ocr(self, image: Image.Image):
+        """
+        Preprocessing: resize 2x + contrast enhancement
+        Input: PIL Image
+        Output: NumPy array for EasyOCR
+        """
+        # Resize image 2x using PIL (high-quality Lanczos resampling)
+        width, height = image.size
+        image_resized = image.resize((width * 2, height * 2), Image.Resampling.LANCZOS)
         
-        img = cv2.resize(img, None, fx=2.0, fy=2.0)
-        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-        h, s, v = cv2.split(hsv)
+        # Enhance contrast using PIL (equivalent to CLAHE but simpler)
+        enhancer = ImageEnhance.Contrast(image_resized)
+        image_enhanced = enhancer.enhance(1.5)  # 1.5x contrast boost
         
-        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
-        v2 = clahe.apply(v)
+        # Convert PIL to NumPy array for EasyOCR (RGB format)
+        img_array = np.array(image_enhanced)
         
-        hsv2 = cv2.merge([h, s, v2])
-        img2 = cv2.cvtColor(hsv2, cv2.COLOR_HSV2BGR)
-        return img2
+        return img_array
     
     def normalize(self, text):
         """Normalize text: lowercase, replace numbers, remove special chars"""
@@ -90,17 +91,20 @@ class GamblingOCR:
         
         return score
     
-    def classify_gambling_ocr(self, image_path):
+    def classify_gambling_ocr(self, image: Image.Image):
         """
         OCR Heuristic: Read full image, match keywords, return prob + text
+        Input: PIL Image (consistent with ViT and RT-DETR)
         Output:
           - prob_gambling (0.0 - 1.0)
           - label_ocr (gambling / non_gambling)
           - ocr_text (raw text from image)
         """
-        # Read text with preprocessing
-        img = self.preprocess_for_ocr(image_path)
-        texts = self.reader.readtext(img, detail=0)
+        # Preprocess PIL Image and convert to NumPy for EasyOCR
+        img_array = self.preprocess_for_ocr(image)
+        
+        # Read text with EasyOCR (accepts NumPy array)
+        texts = self.reader.readtext(img_array, detail=0)
         raw_text = " ".join(texts)
         
         # Normalize and tokenize

@@ -68,7 +68,15 @@ git clone <repository-url>
 cd "Pipeline Repo"
 ```
 
-2. Install dependencies:
+2. Setup Conda (make sure conda is installed):
+```bash
+conda create -n prd5 python=3.10
+```
+```bash
+conda activate prd5
+```
+
+3. Install dependencies:
 ```bash
 pip install --index-url https://download.pytorch.org/whl/cu126 \
   torch==2.9.1 torchvision==0.24.1 torchaudio==2.9.1+cu126
@@ -78,7 +86,7 @@ pip install --index-url https://download.pytorch.org/whl/cu126 \
 pip install -r requirements.txt
 ```
 
-3. Configure settings in `app/config/settings.py` if needed:
+4. Configure settings in `app/config/settings.py` if needed:
    - Model paths
    - Confidence thresholds
    - Device selection (cuda/cpu)

@@ -1,5 +1,5 @@
-MODEL_CLASSIFIER = "prd5/v2-vit-gambling-finetune"
-MODEL_DETECTOR = "prd5/v3-rtdetr-r50-gambling-finetune"
+MODEL_CLASSIFIER = "aitfindonesia/vit-gambling-finetune"
+MODEL_DETECTOR = "aitfindonesia/rtdetr-r50-gambling-finetune"
 
 CONFIDENCE_THRESHOLD_DETECTOR = 0.1
 

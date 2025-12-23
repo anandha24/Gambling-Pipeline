@@ -17,18 +17,13 @@ class GamblingOCR:
         print("EasyOCR Ready")
 
     def preprocess_for_ocr(self, image: Image.Image):
-        """
-        Preprocessing: resize 2x + contrast enhancement
-        Input: PIL Image
-        Output: NumPy array for EasyOCR
-        """
-        # Resize image 2x using PIL (high-quality Lanczos resampling)
+        # Resize image 2x using PIL
         width, height = image.size
         image_resized = image.resize((width * 2, height * 2), Image.Resampling.LANCZOS)
         
-        # Enhance contrast using PIL (equivalent to CLAHE but simpler)
+        # Enhance contrast using PIL
         enhancer = ImageEnhance.Contrast(image_resized)
-        image_enhanced = enhancer.enhance(1.5)  # 1.5x contrast boost
+        image_enhanced = enhancer.enhance(1.5)  
         
         # Convert PIL to NumPy array for EasyOCR (RGB format)
         img_array = np.array(image_enhanced)
@@ -93,8 +88,7 @@ class GamblingOCR:
     
     def classify_gambling_ocr(self, image: Image.Image):
         """
-        OCR Heuristic: Read full image, match keywords, return prob + text
-        Input: PIL Image (consistent with ViT and RT-DETR)
+        OCR-based Scorer: Extract text and score based on gambling keywords
         Output:
           - prob_gambling (0.0 - 1.0)
           - label_ocr (gambling / non_gambling)
@@ -103,7 +97,7 @@ class GamblingOCR:
         # Preprocess PIL Image and convert to NumPy for EasyOCR
         img_array = self.preprocess_for_ocr(image)
         
-        # Read text with EasyOCR (accepts NumPy array)
+        # Read text with EasyOCR
         texts = self.reader.readtext(img_array, detail=0)
         raw_text = " ".join(texts)
         

@@ -27,7 +27,7 @@ class GamblingPipeline:
         timings["classifier_ms"] = round((time.time() - t_start) * 1000, 2)
         label_vit = "gambling" if prob_vit >= 0.5 else "non_gambling"
         
-        # 2. OCR Heuristic (runs for all images)
+        # 2. OCR-based Scorer 
         t_start = time.time()
         prob_ocr, label_ocr, ocr_text = self.ocr.classify_gambling_ocr(image)
         timings["ocr_ms"] = round((time.time() - t_start) * 1000, 2)
@@ -38,7 +38,7 @@ class GamblingPipeline:
         
         # 4. Decision based on fusion
         if label_fusion == "non_gambling":
-            # Non-gambling: return early (no RT-DETR, no ocr_text)
+            # If non-gambling, return early 
             t_start = time.time()
             visualization_path = original_image_to_base64(image_path)
             timings["visualization_ms"] = round((time.time() - t_start) * 1000, 2)
@@ -59,7 +59,7 @@ class GamblingPipeline:
                 "performance": timings,
             }
         
-        # 5. Gambling: run RT-DETR (all 5 classes)
+        # 5. If gambling, run RT-DETR 
         t_start = time.time()
         detections = self.detector.detect(image)
         timings["detector_ms"] = round((time.time() - t_start) * 1000, 2)

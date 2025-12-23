@@ -1,13 +1,13 @@
 # Gambling Detection Pipeline
 
-A production-ready API system for detecting gambling content in images using a multi-stage pipeline combining Vision Transformer (ViT), RT-DETR object detection, and OCR heuristics.
+An API system for detecting gambling content in images using a multi-stage pipeline combining Vision Transformer (ViT), RT-DETR object detection, and OCR.
 
 ## Overview
 
 This system implements a three-stage pipeline for gambling content detection:
 
 1. **ViT Classifier** - Fine-tuned Vision Transformer for binary classification (gambling/non-gambling)
-2. **OCR Heuristic** - Text extraction and keyword matching for gambling-related terms
+2. **OCR-based Scorer** - Text extraction and keyword-based gambling scoring
 3. **RT-DETR Detector** - Real-Time Detection Transformer for object detection (triggered only for gambling content)
 
 The pipeline uses a fusion approach combining ViT and OCR scores to make the final classification decision. If classified as non-gambling, the detector is skipped for performance optimization.
@@ -23,7 +23,7 @@ Input Image
 └─────────────────────────────┘
     ↓
 ┌─────────────────────────────┐
-│  OCR Heuristic              │ → prob_ocr, ocr_text
+│  OCR-based Scorer           │ → prob_ocr, ocr_text
 │  (EasyOCR + Keywords)       │
 └─────────────────────────────┘
     ↓
@@ -44,7 +44,7 @@ Input Image
 
 ## Features
 
-- **Multi-stage Pipeline**: ViT classification, OCR heuristics, and object detection
+- **Multi-stage Pipeline**: ViT classification, OCR-based scoring, and object detection
 - **Performance Optimization**: Conditional execution (detector runs only for gambling content)
 - **RESTful API**: FastAPI-based endpoints with CORS support
 - **Real-time Monitoring**: GPU/CPU usage tracking and performance metrics
@@ -62,13 +62,37 @@ Input Image
 
 ### Setup
 
+> **⚠️ IMPORTANT NOTE**: This setup section is **ONLY** needed if you're setting up on a **CLEAN SERVER from scratch**. 
+> 
+> If you're using a server with **persistent disk** where all dependencies are already installed, you can **SKIP this entire Setup section** and go directly to the [Deployment](#deployment) section below to run the service.
+
 1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd "Pipeline Repo"
+mkdir -p /home/ubuntu/tim5_prd_workdir
+cd /home/ubuntu/tim5_prd_workdir
+git clone https://github.com/aitf-indonesia/Gambling-Pipeline.git
+cd "Gambling-Pipeline"
 ```
 
-2. Setup Conda (make sure conda is installed):
+2. Install Miniconda:
+```bash
+mkdir -p ~/miniconda3
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
+bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
+rm ~/miniconda3/miniconda.sh
+```
+
+   After installing, close and reopen your terminal application or refresh it by running the following command:
+```bash
+source ~/miniconda3/bin/activate
+```
+
+   Then, initialize conda on all available shells by running the following command:
+```bash
+conda init --all
+```
+
+3. Setup Conda environment:
 ```bash
 conda create -n prd5 python=3.10
 ```
@@ -76,7 +100,7 @@ conda create -n prd5 python=3.10
 conda activate prd5
 ```
 
-3. Install dependencies:
+4. Install dependencies:
 ```bash
 pip install --index-url https://download.pytorch.org/whl/cu126 \
   torch==2.9.1 torchvision==0.24.1 torchaudio==2.9.1+cu126
@@ -86,7 +110,7 @@ pip install --index-url https://download.pytorch.org/whl/cu126 \
 pip install -r requirements.txt
 ```
 
-4. Configure settings in `app/config/settings.py` if needed:
+5. Configure settings in `app/config/settings.py` if needed:
    - Model paths
    - Confidence thresholds
    - Device selection (cuda/cpu)
@@ -190,14 +214,14 @@ The pipeline uses fine-tuned models from Hugging Face:
 ### Key Settings (`app/config/settings.py`)
 
 ```python
-MODEL_CLASSIFIER = "aitfindonesia/vit-gambling-finetune"
-MODEL_DETECTOR = "aitfindonesia/rtdetr-r50-gambling-finetune"
+MODEL_CLASSIFIER = "aitfindonesia/komdigiub-gambling-classifier-vit"
+MODEL_DETECTOR = "aitfindonesia/komdigiub-gambling-detection-rtdetr-r50"
 CONFIDENCE_THRESHOLD_DETECTOR = 0.1
 THRESHOLD_FUSION = 0.5
 DEVICE = "cuda"
 ```
 
-### OCR Heuristics
+### OCR-based Scorer
 
 The system uses keyword matching with Levenshtein distance for fuzzy matching. Keywords are categorized into:
 - Core gambling terms
@@ -211,11 +235,8 @@ The system uses keyword matching with Levenshtein distance for fuzzy matching. K
 
 ## Deployment
 
-### Production Setup (Linux/Ubuntu)
-
-Use the provided supervisor configuration:
-
 ```bash
+cd /home/ubuntu/tim5_prd_workdir/Gambling-Pipeline
 chmod +x setup_prd5.sh
 ./setup_prd5.sh
 ```
@@ -243,7 +264,7 @@ sudo supervisorctl status prd5_api
 │   ├── pipeline/
 │   │   ├── classifier.py       # ViT classifier implementation
 │   │   ├── detector.py         # RT-DETR detector implementation
-│   │   ├── ocr.py             # OCR heuristic logic
+│   │   ├── ocr.py             # OCR-based scorer logic
 │   │   ├── pipeline.py        # Main pipeline orchestration
 │   │   └── visualizer.py      # Bounding box visualization
 │   └── utils/

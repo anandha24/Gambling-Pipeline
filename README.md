@@ -70,7 +70,8 @@ cd Gambling-Pipeline
 docker compose up -d --build
 ```
 
-**API available at:** `http://127.0.0.1:8000`
+**API available at:** `http://localhost:8000`
+- Swagger UI: `http://localhost:8000/docs`
 
 **Useful commands:**
 ```bash

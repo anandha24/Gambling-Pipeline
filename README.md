@@ -54,7 +54,39 @@ Input Image
 
 ## Installation
 
-### Prerequisites
+### Docker (Recommended)
+
+The fastest way to deploy. All dependencies are bundled in the container.
+
+**Requirements:**
+- Docker Engine
+- NVIDIA Container Toolkit
+- NVIDIA GPU with driver supporting CUDA 12.1+
+
+**Deploy:**
+```bash
+git clone https://github.com/aitf-indonesia/Gambling-Pipeline.git
+cd Gambling-Pipeline
+docker compose up -d --build
+```
+
+**API available at:** `http://127.0.0.1:8000`
+
+**Useful commands:**
+```bash
+docker compose logs -f          # View logs
+docker compose down             # Stop service
+docker compose up -d            # Restart service
+docker compose up -d --build    # Rebuild and restart
+```
+
+---
+
+### Manual Installation
+
+If Docker is not available, follow the manual setup below.
+
+#### Prerequisites
 
 - Python 3.10+
 - NVIDIA GPU with CUDA support (optional but recommended)
@@ -128,7 +160,7 @@ Start the FastAPI server:
 python run_server.py
 ```
 
-The server will start on `http://127.0.0.1:9090`
+The server will start on `http://127.0.0.1:8000`
 
 ### API Endpoints
 

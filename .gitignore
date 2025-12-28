@@ -56,3 +56,6 @@ simulation/*
 # Environment variables
 .env.local
 .env.*.local
+
+# Docker
+docker-compose.override.yml

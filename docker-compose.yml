@@ -1,0 +1,32 @@
+services:
+  gambling-pipeline:
+    image: gambling-pipeline-api:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gambling-pipeline-api
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./results:/app/results
+      - hf_cache:/app/.cache/huggingface
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - HF_HOME=/app/.cache/huggingface
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+volumes:
+  hf_cache:

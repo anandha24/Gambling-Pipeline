@@ -31,9 +31,9 @@ class GamblingPipeline:
         # t_start = time.time()
         # prob_ocr, label_ocr, ocr_text = self.ocr.classify_gambling_ocr(image)
         # timings["ocr_ms"] = round((time.time() - t_start) * 1000, 2)
-        prob_ocr = 0
+        prob_ocr = 0.5
         label_ocr = "None" 
-        ocr_text = "Disabled / Ga Dipake"
+        ocr_text = "Disabled"
         
         # 3. Fusion
         prob_fusion = 0.5 * prob_vit + 0.5 * prob_ocr
@@ -82,7 +82,7 @@ class GamblingPipeline:
             "label_ocr": label_ocr if label_ocr else "None",
             "label_fusion": label_fusion,
             "detections": detections,
-            "ocr_text": ocr_text if ocr_text else "Disabled / Ga Dipake",
+            "ocr_text": ocr_text if ocr_text else "Disabled",
             "visualization_path": visualization_path,
             "performance": timings,
         }
